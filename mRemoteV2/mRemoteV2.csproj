@@ -195,9 +195,9 @@
     <Compile Include="App\UpdateManager.cs" />
     <Compile Include="Config\Connections\ConfigConnectionStrategyFactory.cs" />
     <Compile Include="Config\Connections\IConfigConnectionStrategy.cs" />
+    <Compile Include="Config\Connections\Strategies\VisionAppVreConfigConnectionStrategy.cs" />
     <Compile Include="Config\Connections\Strategies\CsvConfigConnectionStrategy.cs" />
     <Compile Include="Config\Connections\Load.cs" />
-    <Compile Include="Config\Connections\Save.cs" />
     <Compile Include="Config\Config.Settings.Load.cs" />
     <Compile Include="Config\Config.Settings.Providers.cs" />
     <Compile Include="Config\Config.Settings.Save.cs" />

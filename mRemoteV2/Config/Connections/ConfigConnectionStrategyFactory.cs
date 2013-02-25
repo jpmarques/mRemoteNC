@@ -63,7 +63,7 @@ namespace mRemoteNC.Config.Connections
                     strategy = new CsvConfigConnectionStrategy();
                     break;
                 case 3:
-                    strategy = new VisionAppCsvConfigConnectionStrategy();
+                    strategy = new VisionAppVreConfigConnectionStrategy();
                     break;
                 default:
                     strategy = new XmlConfigConnectionStrategy();
