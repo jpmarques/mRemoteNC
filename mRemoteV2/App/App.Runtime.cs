@@ -1691,67 +1691,13 @@ namespace mRemoteNC
             {
                 try
                 {
-                    if (!IsConnectionsFileLoaded) return;
-                    if (Update && Settings.Default.UseSQLServer == false)
+                    if (!IsConnectionsFileLoaded)
                     {
                         return;
                     }
 
-                    bool tmrWasEnabled = false;
-
-                    if (TimerSqlWatcher != null)
-                    {
-                        tmrWasEnabled = TimerSqlWatcher.Enabled;
-                        if (TimerSqlWatcher.Enabled == true)
-                        {
-                            TimerSqlWatcher.Stop();
-                        }
-                    }
-
-                    Config.Connections.Save conS = new Config.Connections.Save();
-
-                    if (Settings.Default.UseSQLServer == false)
-                    {
-                        if (Settings.Default.LoadConsFromCustomLocation == false)
-                        {
-                            conS.ConnectionFileName =
-                                (string)
-                                (Connections.DefaultConnectionsPath + "\\" +
-                                 Connections.DefaultConnectionsFile);
-                        }
-                        else
-                        {
-                            conS.ConnectionFileName = (string)Settings.Default.CustomConsPath;
-                        }
-                    }
-
-                    conS.ConnectionList = ConnectionList;
-                    conS.ContainerList = ContainerList;
-                    conS.Export = false;
-                    conS.SaveSecurity = new Save(false);
-                    conS.RootTreeNode = Windows.treeForm.tvConnections.Nodes[0];
-
-                    if (Settings.Default.UseSQLServer == true)
-                    {
-                        conS.SaveFormat = Config.Connections.Save.Format.SQL;
-                        conS.SQLHost = (string)Settings.Default.SQLHost;
-                        conS.SQLDatabaseName = (string)Settings.Default.SQLDatabaseName;
-                        conS.SQLUsername = (string)Settings.Default.SQLUser;
-                        conS.SQLPassword = Crypt.Decrypt((string)Settings.Default.SQLPass,
-                                                         (string)General.EncryptionKey);
-                    }
-
-                    conS.SaveConnections();
-
-                    if (Settings.Default.UseSQLServer == true)
-                    {
-                        LastSqlUpdate = DateTime.Now;
-                    }
-
-                    if (tmrWasEnabled)
-                    {
-                        TimerSqlWatcher.Start();
-                    }
+                    IConfigConnectionStrategy configConnection = ConfigConnectionStrategyFactory.GetConfigConnection();
+                    configConnection.SaveConnections(Update);
                 }
                 catch (Exception ex)
                 {
@@ -1763,83 +1709,25 @@ namespace mRemoteNC
 
             public static void SaveConnectionsAs(Save SaveSecurity, TreeNode RootNode)
             {
-                Config.Connections.Save conS = new Config.Connections.Save();
+                IConfigConnectionStrategy configConnection = null;
                 try
                 {
-                    bool tmrWasEnabled;
-
-                    if (TimerSqlWatcher != null)
-                    {
-                        tmrWasEnabled = TimerSqlWatcher.Enabled;
-                        if (TimerSqlWatcher.Enabled == true)
-                        {
-                            TimerSqlWatcher.Stop();
-                        }
-                    }
-
                     SaveFileDialog sD = Controls.ConnectionsSaveAsDialog();
 
-                    if (sD.ShowDialog() == DialogResult.OK)
-                    {
-                        conS.ConnectionFileName = sD.FileName;
-                    }
-                    else
+                    if (sD.ShowDialog() != DialogResult.OK)
                     {
                         return;
                     }
 
-                    switch (sD.FilterIndex)
-                    {
-                        case 1:
-                            conS.SaveFormat = Config.Connections.Save.Format.mRXML;
-                            break;
-                        case 2:
-                            conS.SaveFormat = Config.Connections.Save.Format.mRCSV;
-                            break;
-                        case 3:
-                            conS.SaveFormat = Config.Connections.Save.Format.vRDCSV;
-                            break;
-                    }
-
-                    if (RootNode == Windows.treeForm.tvConnections.Nodes[0])
-                    {
-                        if (conS.SaveFormat != Config.Connections.Save.Format.mRXML &&
-                            conS.SaveFormat != Config.Connections.Save.Format.None)
-                        {
-                        }
-                        else
-                        {
-                            if (conS.ConnectionFileName ==
-                                Connections.DefaultConnectionsPath + "\\" +
-                                Connections.DefaultConnectionsFile)
-                            {
-                                Settings.Default.LoadConsFromCustomLocation = false;
-                            }
-                            else
-                            {
-                                Settings.Default.LoadConsFromCustomLocation = true;
-                                Settings.Default.CustomConsPath = conS.ConnectionFileName;
-                            }
-                        }
-                    }
-
-                    conS.ConnectionList = ConnectionList;
-                    conS.ContainerList = ContainerList;
-                    if (RootNode != Windows.treeForm.tvConnections.Nodes[0])
-                    {
-                        conS.Export = true;
-                    }
-                    conS.SaveSecurity = SaveSecurity;
-                    conS.RootTreeNode = RootNode;
-
-                    conS.SaveConnections();
+                    configConnection = ConfigConnectionStrategyFactory.GetConfigConnection(SaveSecurity, RootNode, sD);
+                    configConnection.SaveConnections(false);
                 }
                 catch (Exception ex)
                 {
                     MessageCollector.AddMessage(MessageClass.ErrorMsg,
                                                 (string)
                                                 (string.Format(Language.strConnectionsFileCouldNotSaveAs,
-                                                               conS.ConnectionFileName) +
+                                                (configConnection == null) ? "" : configConnection.ConnectionFileName) +
                                                  Constants.vbNewLine + ex.Message));
                 }
             }
